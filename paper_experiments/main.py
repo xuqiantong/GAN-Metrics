@@ -10,6 +10,7 @@ from utils import mkdir, TMix, TGen
 
 g = Globals()
 
+
 mkdir(g.default_repo_dir)
 shutil.rmtree(g.default_repo_dir + "labels", ignore_errors=True)
 tasks = []

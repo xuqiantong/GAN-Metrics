@@ -15,19 +15,6 @@ def get_hostname():
 class Globals():
 
     def __init__(self):
-        #self.default_data = 'celeba'
-        #hostname = get_hostname()
-        #self.default_root_dir = '/home/yang/data/' if hostname == "Dragon" else '../data/' if hostname.count(
-        #    "nikola") else '/prem/'
-        #self.default_feature_dir = '/home/yang/data/repo/features/' if hostname == "Dragon" else '/home/gh349/xqt/data/repo/features/' if hostname.count(
-        #    "nikola") else '/shared/features/'
-        #self.default_repo_dir = self.default_root_dir + 'repo/'
-        #self.default_data_dir = '/scratch/gh349/' if hostname.count(
-        #    "nikola") else self.default_root_dir + 'data/'
-        #self.default_model_dir = '/home/gh349/gan/data/models/' if hostname.count(
-        #    "nikola") else self.default_root_dir + 'models/'
-        #self.default_ground_truth_folder = 'true'
-
         self.default_data = 'lsun'
         self.default_root_dir = '/home/gh349/xqt/new_gan_exps/'
         self.default_feature_dir = self.default_root_dir + 'features/'
@@ -35,7 +22,6 @@ class Globals():
         self.default_data_dir = '/scratch/gh349/'
         self.default_model_dir = '/home/gh349/gan/data/models/'
         self.default_ground_truth_folder = 'true'
-
 
 g = Globals()
 
