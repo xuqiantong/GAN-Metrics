@@ -82,7 +82,7 @@ def folder_sampler(opt):
             break
 
     for f in folderList:
-        saveFeature(f, opt, 'resnet34_random')
+        saveFeature(f, opt, opt.feature_model)
         peek(opt.data, os.path.relpath(f, opt.outf + "samples/" + opt.data))
 
     for folder in folderList:

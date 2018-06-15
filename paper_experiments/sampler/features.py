@@ -48,9 +48,6 @@ def saveFeature(imgFolder, opt, model='resnet34', workers=4, batch_size=64):
         feature_smax = torch.cat(feature_smax, 0)
 
     elif model.find('resnet') >= 0:
-        assert hasattr(models.resnet, model), print('Invalid feature extractor'
-                                                    ' model: {}'.format(model))
-
         if model == 'resnet34_cifar':
             # Please load your own model. Example here:
             # c = torch.load(
@@ -58,6 +55,7 @@ def saveFeature(imgFolder, opt, model='resnet34', workers=4, batch_size=64):
             # resnet = c['net']
             pass
             print('Using resnet34 trained on cifar10.')
+            raise NotImplementedError()
 
         elif model == 'resnet34_random':
             # Please load your own model. Example here:
@@ -65,9 +63,10 @@ def saveFeature(imgFolder, opt, model='resnet34', workers=4, batch_size=64):
             #     '/home/gh349/xqt/wide-resnet.pytorch/checkpoint/cifar10/random_resnet34.t7')
             pass
             print('Using resnet34 with random weights.')
+            raise NotImplementedError()
 
         else:
-            resnet = getattr(models, model)(pretrained=True)
+            resnet = getattr(models, 'resnet34')(pretrained=True)
             print('Using resnet34 with pretrained weights.')
 
         resnet.cuda().eval()

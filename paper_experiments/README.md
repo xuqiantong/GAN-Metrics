@@ -9,7 +9,7 @@ This repository provides the code for the paper [An empirical study on evaluatio
 	- ResNet with different weights
 	- GANs with different architectures
 
-### Creat tassk
+### Creat tasks
 Use `main.py` to creat all the experiments you want to run. There are some examples in `main.py` including:
 - Generate samples and features
 - Compute metrics on:
@@ -22,4 +22,4 @@ Use `worker.py` to pick and actually excute tasks. You can sprawl as many worker
 ```
 python3 worker.py --id 10086
 ```
-All the experiment results will be stored in `<g.default_repo_dir>rlt/`.
+All the experiment results will be stored in `<g.default_repo_dir>/rlt/`.

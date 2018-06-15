@@ -116,93 +116,6 @@ def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder):
                 break
 
 
-def saveVGGFeature(vgg_model, sampleSize, batchSize, imgFolder):
-
-    input = torch.FloatTensor(batchSize, 3, 224, 224).cuda()
-    vgg_model.eval()
-
-    trans = transforms.Compose([
-        transforms.Resize(224),
-        transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    ])
-
-    workers = 4
-    featureSize = [25088, 1000]
-
-    feature_conv = torch.zeros(sampleSize, featureSize[0])
-    feature_smax = torch.zeros(sampleSize, featureSize[1])
-    dataset = dset.ImageFolder(root=imgFolder, transform=trans)
-    dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=batchSize, num_workers=int(workers))
-
-    last = 0
-    for i, data in enumerate(dataloader, 0):
-        img, _ = data
-        batch_size = img.size(0)
-        input.data.resize_(img.size()).copy_(img)
-        fconv = vgg_model.features(input)
-        fconv.data = fconv.data.view(fconv.size(0), -1)
-        fclass = vgg_model.classifier(fconv)
-        sm = torch.nn.Softmax().cuda()
-        fsmax = sm(fclass)
-        feature_conv[last:last + batch_size].copy_(fconv.data)
-        feature_smax[last:last + batch_size].copy_(fsmax.data)
-        if (i % 10 == 0):
-            print('saving features ... batch: ' + str(i))
-        last += batch_size
-        if last >= sampleSize:
-            break
-
-    torch.save(feature_conv, imgFolder + '/feature_conv.pth')
-    torch.save(feature_smax, imgFolder + '/feature_smax.pth')
-    return feature_conv, feature_smax
-
-
-def saveInceptionFeature(inception_model, sampleSize, batchSize, imgFolder):
-
-    input = torch.FloatTensor(batchSize, 3, 299, 299).cuda()
-    inception_model.eval()
-
-    trans = transforms.Compose([
-        transforms.Resize(299),
-        transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    ])
-
-    workers = 4
-
-    feature_smax = torch.zeros(sampleSize, 1000)
-    feature_logi = torch.zeros(sampleSize, 1000)
-
-    dataset = dset.ImageFolder(root=imgFolder, transform=trans)
-    dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=batchSize, num_workers=int(workers))
-
-    last = 0
-    for i, data in enumerate(dataloader, 0):
-        img, _ = data
-        batch_size = img.size(0)
-        input.data.resize_(img.size()).copy_(img)
-        fclass = inception_model(input)
-        sm = torch.nn.Softmax().cuda()
-        fsmax = sm(fclass)
-        feature_logi[last:last + batch_size].copy_(fclass.data)
-        feature_smax[last:last + batch_size].copy_(fsmax.data)
-        if (i % 10 == 0):
-            print('saving features ... batch: ' + str(i))
-        last += batch_size
-        if last >= sampleSize:
-            break
-
-    torch.save(feature_smax, imgFolder + '/feature_smax.pth')
-    torch.save(feature_logi, imgFolder + '/feature_logi.pth')
-
-    return feature_smax, feature_logi
-
-
 class ConvNetFeatureSaver(object):
 
     def __init__(self, model='resnet34', workers=4, batchSize=64):
@@ -425,18 +338,16 @@ def entropy_score(X, Y, epsilons):
     return scores
 
 
+eps = 1e-20
 def inception_score(X):
-
-    kl = X * (X.log() - X.mean(0).log().expand_as(X))
+    kl = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
     score = np.exp(kl.sum(1).mean())
 
     return score
 
-
 def mode_score(X, Y):
-
-    kl1 = X * (X.log() - Y.mean(0).log().expand_as(X))
-    kl2 = X.mean(0) * (X.mean(0).log() - Y.mean(0).log())
+    kl1 = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
+    kl2 = X.mean(0) * ((X.mean(0)+eps).log()-(Y.mean(0)+eps).log())
     score = np.exp(kl1.sum(1).mean() - kl2.sum())
 
     return score

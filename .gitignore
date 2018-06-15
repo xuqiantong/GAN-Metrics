@@ -19,6 +19,7 @@ ore latex/pdflatex auxiliary files:
 ## Folders
 results/
 __pycache__
+paper_experiments/_cache__scratch_gh349_lsun_bedroom_train_lmdb
 
 ## Reset flag
 .reset.keep

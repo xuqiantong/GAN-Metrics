@@ -3,13 +3,16 @@ from globals import Globals
 from utils import mkdir, saveImage
 import random
 import torch
+from torch.autograd import Variable
 import torchvision.datasets as dset
 import shutil
 import torchvision.transforms as transforms
 from sampler.peek import peek
 import os
 from tqdm import tqdm
+from torch import nn
 import torch.nn.functional as F
+import torchvision.models as models
 
 g = Globals()
 
@@ -138,13 +141,13 @@ def getDat(opt, dataList, outf, mixType="pix", singleFolder=False):
                 dataloader = torch.utils.data.DataLoader(
                     dataset, batch_size=96, shuffle=True, num_workers=2)
 
-                resnet = getattr(models, model)(pretrained=True)
+                resnet = getattr(models, 'resnet34')(pretrained=True)
                 print('Using resnet34 with pretrained weights.')
                 resnet.cuda().eval()
                 resnet_feature = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu,
                                                resnet.maxpool, resnet.layer1,
                                                resnet.layer2, resnet.layer3, resnet.layer4)
-                featureM = []
+                feature_conv, feature_smax, feature_class = [], [], []
                 for img, _ in tqdm(dataloader):
                     input = Variable(img.cuda(), volatile=True)
                     fconv = resnet_feature(input)
@@ -152,8 +155,20 @@ def getDat(opt, dataList, outf, mixType="pix", singleFolder=False):
                     flogit = resnet.fc(fconv)
                     fsmax = F.softmax(flogit)
                     feature_conv.append(fconv.data.cpu())
-                featureM = torch.cat(featureM, 0)
-                pass
+                    feature_class.append(flogit.data.cpu())
+                    feature_smax.append(fsmax.data.cpu())
+                feature_conv = torch.cat(feature_conv, 0)
+                feature_class = torch.cat(feature_class, 0)
+                feature_smax = torch.cat(feature_smax, 0)
+
+                if mixType.find('conv') >= 0:
+                    featureM = feature_conv
+                elif mixType.find('smax') >= 0:
+                    featureM = feature_smax
+                elif mixType.find('class') >= 0:
+                    featureM = feature_class
+                else:
+                    raise NotImplementedError
 
             randP = torch.randperm(len(featureM))  # random permutation
             if last == 0:

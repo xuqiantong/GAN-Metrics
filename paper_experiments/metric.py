@@ -150,11 +150,6 @@ def mode_score(X, Y):
     kl2 = X.mean(0) * ((X.mean(0)+eps).log()-(Y.mean(0)+eps).log())
     score = np.exp(kl1.sum(1).mean() - kl2.sum())
 
-
-    kl11 = X * ((X+eps).log()-(Y.mean(0)+eps).log().expand_as(X))
-    score1 = np.exp(kl11.sum(1).mean() - kl2.sum())
-    print(score, score1)
-
     return score
 
 

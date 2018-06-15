@@ -67,7 +67,7 @@ def generator_sampler(opt):
     if opt.dataset == 'mnist_s':
         print("Warning: subclass experiment.. Not saving features..")
     else:
-        saveFeature(opt.name, opt, 'resnet34_random')
+        saveFeature(opt.name, opt, opt.feature_model)
     peek(opt.data, opt.model + str(opt.epoch))
 
     with open(opt.name + "/mark", "w") as f:

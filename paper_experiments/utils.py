@@ -39,11 +39,12 @@ class TMix(object):
 
 class TGen(object):
 
-    def __init__(self, mode, data, model, epoch):
+    def __init__(self, mode, data, model, epoch, feature_model='resnet34'):
         self.mode = mode
         self.data = data
         self.model = model
         self.epoch = epoch
+        self.feature_model = feature_model
 
 
 class TGan(object):

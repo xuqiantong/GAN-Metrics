@@ -7,7 +7,7 @@ import torch.utils.data
 import os
 from models import DCGAN_G
 from globals import Globals, addDataInfo, getDataSet
-from metric.metric import distance
+from metric import distance
 from torch.autograd import Variable
 from utils import saveImage, print_prop
 import numpy as np

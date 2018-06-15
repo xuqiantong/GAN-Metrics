@@ -17,9 +17,7 @@ from gan.DCGAN_cluster import DCGAN_cluster_main
 from gan.MGGAN import MGGAN_main
 from gan.NNGAN import NNGAN_main
 from gan.WGAN import WGAN_main
-from quan.quantile import do_work
 from utils import pickOne, print_prop
-from classifier import classify
 import pickle
 import scipy.io as sio
 
@@ -111,7 +109,7 @@ def run_combine(t):
                 print(incep_file_name + " already generated. Continue.")
                 return
             X = getDat(t, t.dataList, g.default_repo_dir + "samples/Mix/M1" +
-                       hostname, 'resnet34_smax')  # get smax feature
+                       hostname, t.featureType)  # get smax feature
             incep_score = inception_score(X)
             f = open(incep_file_name, "wb")
             pickle.dump(incep_score, f)
@@ -134,10 +132,10 @@ def run_combine(t):
                 print(ms_file_name + " already generated. Continue.")
                 return
             X = getDat(t, t.dataList, g.default_repo_dir +
-                       "samples/Mix/M1" + hostname, 'resnet34_smax')
+                       "samples/Mix/M1" + hostname, t.featureType)
             dataList = [Ent(1, t.data, 'true', None)]
             Y = getDat(t, dataList, g.default_repo_dir +
-                       "samples/Mix/M2" + hostname, 'resnet34_smax')
+                       "samples/Mix/M2" + hostname, t.featureType)
 
             modeScore = mode_score(X, Y)
             f = open(ms_file_name, "wb")
@@ -161,10 +159,10 @@ def run_combine(t):
                 print(fid_file_name + " already generated. Continue.")
                 return
             X = getDat(t, t.dataList, g.default_repo_dir +
-                       "samples/Mix/M1" + hostname, 'resnet34_smax')
+                       "samples/Mix/M1" + hostname, t.featureType)
             dataList = [Ent(1, t.data, 'true', None)]
             Y = getDat(t, dataList, g.default_repo_dir +
-                       "samples/Mix/M2" + hostname, 'resnet34_smax')
+                       "samples/Mix/M2" + hostname, t.featureType)
 
             FID = fid(X, Y)
             f = open(fid_file_name, "wb")
@@ -183,10 +181,10 @@ def run_combine(t):
             t.folderName = t.model + \
                 (str(t.epoch) if not t.model.startswith('true') else "")
             if t.model.startswith('true'):
-                print("\nSampling " + t.folderName + "...")
+                print("\nSampling " + t.folderName + " ...")
                 folder_sampler(t)
             else:
-                print("\nSampling " + t.folderName + "...")
+                print("\nSampling " + t.folderName + " ...")
                 generator_sampler(t)
 
     elif t.mode == "Gan":  # generate some fake images..
