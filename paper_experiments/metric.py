@@ -21,9 +21,8 @@ from scipy.stats import entropy
 from numpy.linalg import norm
 from scipy import linalg
 
-# calculate paiwise distances
-def distance(X, Y, sqrt):
 
+def distance(X, Y, sqrt):
     nX = X.size(0)
     nY = Y.size(0)
     X = X.view(nX,-1).cuda()
@@ -43,10 +42,8 @@ def distance(X, Y, sqrt):
 
 
 def wasserstein(M, sqrt):
-
     if sqrt:
         M = M.abs().sqrt()
-    t1 = timeit.default_timer()
     emd = ot.emd2([],[],M.numpy())
 
     return emd
@@ -66,7 +63,6 @@ class Score_knn:
 
 
 def knn(Mxx, Mxy, Myy, k, sqrt):
-
     n0 = Mxx.size(0)
     n1 = Myy.size(0)
     label = torch.cat((torch.ones(n0),torch.zeros(n1)))
@@ -97,7 +93,6 @@ def knn(Mxx, Mxy, Myy, k, sqrt):
 
 
 def mmd(Mxx, Mxy, Myy, sigma) :
-
     scale = Mxx.mean()
     Mxx = torch.exp(-Mxx/(scale*2*sigma*sigma))
     Mxy = torch.exp(-Mxy/(scale*2*sigma*sigma))
@@ -109,7 +104,6 @@ def mmd(Mxx, Mxy, Myy, sigma) :
 
 
 def ent(M, epsilon) :
-
     n0 = M.size(0)
     n1 = M.size(1)
     neighbors = M.lt(epsilon).float()
@@ -130,7 +124,6 @@ def ent(M, epsilon) :
 
 
 def entropy_score(X, Y, epsilons):
-
     Mxy = distance(X, Y, False)
     scores = []
     for epsilon in epsilons:
@@ -138,12 +131,14 @@ def entropy_score(X, Y, epsilons):
     
     return scores
 
+
 eps = 1e-20
 def inception_score(X):
     kl = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
     score = np.exp(kl.sum(1).mean())
 
     return score
+
 
 def mode_score(X, Y):
     kl1 = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
@@ -165,6 +160,7 @@ def fid(X, Y):
 
     score = m.dot(m) + m_w.dot(m_w) - 2*m_w.dot(m) + np.trace(C + C_w - 2*C_C_w_sqrt)
     return np.sqrt(score)
+
 
 class Score:
     emd = 0

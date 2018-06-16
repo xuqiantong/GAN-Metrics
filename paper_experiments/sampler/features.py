@@ -11,10 +11,26 @@ from globals import Globals
 from utils import mkdir, lastFolder
 from tqdm import tqdm
 import torch.nn.functional as F
-
+import os
 
 def saveFeature(imgFolder, opt, model='resnet34', workers=4, batch_size=64):
+    '''
+        model: inception_v3, vgg13, vgg16, vgg19, resnet18, resnet34,
+               resnet50, resnet101, or resnet152
+    '''
     g = Globals()
+
+    mkdir(g.default_feature_dir + opt.data)
+    feature_dir = g.default_feature_dir + opt.data + "/" + lastFolder(imgFolder)
+    
+    conv_path = '{}_{}_conv.pth'.format(feature_dir, model)
+    class_path = '{}_{}_class.pth'.format(feature_dir, model)
+    smax_path = '{}_{}_smax.pth'.format(feature_dir, model)
+
+    if (os.path.exists(conv_path) and  os.path.exists(class_path) and os.path.exists(class_path)):
+        print("Feature already generated before. Now pass.")
+        return
+
     if hasattr(opt, 'feat_model') and opt.feat_model is not None:
         model = opt.feat_model
     if model == 'vgg' or model == 'vgg16':
@@ -36,7 +52,7 @@ def saveFeature(imgFolder, opt, model='resnet34', workers=4, batch_size=64):
         for img, _ in tqdm(dataloader):
             input = Variable(img.cuda(), volatile=True)
             fconv = vgg.features(input)
-            fconv_out = fconv.mean().mean(2).squeeze()
+            fconv_out = fconv.mean(3).mean(2).squeeze()
             fconv = fconv.view(fconv.size(0), -1)
             flogit = vgg.classifier(fconv)
             fsmax = F.softmax(flogit)
@@ -163,10 +179,6 @@ def saveFeature(imgFolder, opt, model='resnet34', workers=4, batch_size=64):
     else:
         raise NotImplementedError
 
-    mkdir(g.default_feature_dir)
-    feature_dir = g.default_feature_dir + \
-        opt.data + "/" + lastFolder(imgFolder)
-    mkdir(g.default_feature_dir + opt.data)
 
     torch.save(feature_conv, '{}_{}_conv.pth'.format(feature_dir, model))
     torch.save(feature_class, '{}_{}_class.pth'.format(feature_dir, model))

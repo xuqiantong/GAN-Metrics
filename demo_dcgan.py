@@ -265,4 +265,6 @@ for epoch in range(opt.niter):
     # compute training score      
     s = metric.compute_score_raw(opt.dataset, opt.imageSize, opt.dataroot, opt.sampleSize, opt.batchSize, opt.outf+'/real/', opt.outf+'/fake/', netG, opt.nz, 'inception_v3')
     score_tr[epoch] = s
-    np.save('%s/score_tr_ep%d.npy' % (opt.outf, epoch), score_tr)
+
+np.save('%s/score_tr_ep.npy' % (opt.outf), score_tr)
+

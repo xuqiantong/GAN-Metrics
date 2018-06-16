@@ -26,6 +26,17 @@ if False:
     tasks.append(TGen('Gen', 'cifar10', 'WGAN', 1900, 'resnet34'))
 
 
+    tasks.append(TGen('Gen', 'lsun', 'true', 9, 'vgg16'))
+    tasks.append(TGen('Gen', 'lsun', 'DCGAN', 9, 'vgg16'))
+    tasks.append(TGen('Gen', 'celeba', 'true', 24, 'vgg16'))
+    tasks.append(TGen('Gen', 'celeba', 'DCGAN', 24, 'vgg16'))
+
+    tasks.append(TGen('Gen', 'lsun', 'true', 9, 'inception_v3'))
+    tasks.append(TGen('Gen', 'lsun', 'DCGAN', 9, 'inception_v3'))
+    tasks.append(TGen('Gen', 'celeba', 'true', 24, 'inception_v3'))
+    tasks.append(TGen('Gen', 'celeba', 'DCGAN', 24, 'inception_v3'))
+
+
 trans = transforms.Compose([transforms.Scale(64), transforms.ToTensor(
 ), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 trans_rand = transforms.Compose([transforms.Scale(64), transforms.Pad(4), transforms.RandomCrop(
@@ -36,7 +47,7 @@ trans_rotate = transforms.Compose([transforms.Scale(
 
 # Metrics on different mixtures
 # Only `*_smax` features are suggested to be used for `Incep`, `ModeScore` and `FID`
-if False:
+if True:
     for sampleSize in [2000]:
         for data in ['cifar10', 'celeba', 'lsun']:
             if data == 'celeba':
@@ -87,7 +98,7 @@ if False:
 
 # For robustness
 # When using `trans_rotate` and `trans_rand`, only resnet34 is used for feature extraction.
-if True:
+if False:
     for sampleSize in [2000]:
         for data in ['celeba', 'lsun']:
             if data == 'celeba':

@@ -11,11 +11,10 @@ from utils import mkdir, print_prop, saveImage
 from .features import saveFeature
 from .peek import peek
 
+
 g = Globals()
 
-
 def generator_sampler(opt):
-
     opt.batchSize = 64
     opt.folderSize = 600
     opt.overWrite = False
@@ -34,7 +33,8 @@ def generator_sampler(opt):
     mkdir(opt.outf + "samples/" + opt.data)
     if (os.path.exists(opt.name)) and (not opt.overWrite):
         if (os.path.exists(opt.name + "/mark")):  # indeed finished
-            print("Already generated before. Now exit.")
+            print("Sampling already finished before. Now pass.")
+            saveFeature(opt.name, opt, opt.feature_model)
             return
         else:
             print("Partially finished. Now rerun. ")
@@ -64,6 +64,7 @@ def generator_sampler(opt):
                 break
         if iter >= opt.sampleSize:
             break
+
     if opt.dataset == 'mnist_s':
         print("Warning: subclass experiment.. Not saving features..")
     else:
@@ -72,6 +73,7 @@ def generator_sampler(opt):
 
     with open(opt.name + "/mark", "w") as f:
         f.write("")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

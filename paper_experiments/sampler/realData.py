@@ -33,10 +33,13 @@ def folder_sampler(opt):
     opt.outTrueA = opt.outf + "samples/" + opt.data + "/" + opt.outTrueA
     opt.outTrueB = opt.outf + "samples/" + opt.data + "/" + opt.outTrueB
     opt.outTrueC = opt.outf + "samples/" + opt.data + "/" + opt.outTrueC
+    folderList = [opt.outTrueA, opt.outTrueB, opt.outTrueC]
 
     if (os.path.exists(opt.outTrueC)):
         if (os.path.exists(opt.outTrueC + "/mark")):  # indeed finished
-            print("Already generated before. Now exit.")
+            print("Sampling already finished before. Now pass.")
+            for f in folderList:
+                saveFeature(f, opt, opt.feature_model)
             return
         else:
             print("Partially finished. Now rerun. ")
@@ -59,8 +62,6 @@ def folder_sampler(opt):
     def giveName(iter):  # 7 digit name.
         ans = str(iter)
         return '0' * (7 - len(ans)) + ans
-
-    folderList = [opt.outTrueA, opt.outTrueB, opt.outTrueC]
 
     iter = 0
     subfolder = -1

@@ -118,7 +118,8 @@ class ConvNetFeatureSaver(object):
     def __init__(self, model='resnet34', workers=4, batchSize=64):
         '''
         model: inception_v3, vgg13, vgg16, vgg19, resnet18, resnet34,
-               resnet50, resnet101, or resnet152'''
+               resnet50, resnet101, or resnet152
+        '''
         self.model = model
         self.batch_size = batchSize
         self.workers = workers
