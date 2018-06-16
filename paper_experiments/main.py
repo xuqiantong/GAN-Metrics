@@ -47,7 +47,7 @@ trans_rotate = transforms.Compose([transforms.Scale(
 
 # Metrics on different mixtures
 # Only `*_smax` features are suggested to be used for `Incep`, `ModeScore` and `FID`
-if True:
+if False:
     for sampleSize in [2000]:
         for data in ['cifar10', 'celeba', 'lsun']:
             if data == 'celeba':
@@ -79,7 +79,7 @@ if True:
 
 
 # Metrics on different number of samples
-if False:
+if True:
     for sampleSize in [100, 200, 400, 800, 1600, 3200, 6400, 12800]:
         for data in ['celeba', 'lsun']:
             for foldername in ['DCGAN24' if data == 'celeba' else 'DCGAN9', 'true_test']:
