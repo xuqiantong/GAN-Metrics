@@ -20,14 +20,12 @@ from numpy.linalg import norm
 from scipy import linalg
 
 
-# save fake images
 def giveName(iter):  # 7 digit name.
     ans = str(iter)
-    return '0' * (7 - len(ans)) + ans
+    return ans.zfill(7)
 
 
 def sampleFake(netG, nz, sampleSize, batchSize, saveFolder):
-
     print('sampling fake images ...')
     saveFolder = saveFolder + '0/'
 
@@ -117,7 +115,6 @@ def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder):
 
 
 class ConvNetFeatureSaver(object):
-
     def __init__(self, model='resnet34', workers=4, batchSize=64):
         '''
         model: inception_v3, vgg13, vgg16, vgg19, resnet18, resnet34,
@@ -134,20 +131,7 @@ class ConvNetFeatureSaver(object):
                                      (0.229, 0.224, 0.225)),
             ])
         elif self.model.find('resnet') >= 0:
-            if self.model == 'resnet34A':
-                c = torch.load(
-                    '/home/fw245/clones/WassersteinGAN/data/resnet34-1-best.pth.tar')
-                resnet = nn.DataParallel(models.resnet34())
-                resnet.load_state_dict(c['state_dict'])
-                resnet = resnet.module
-            elif self.model == 'resnet34B':
-                c = torch.load(
-                    '/home/fw245/clones/WassersteinGAN/data/resnet34-2-best.pth.tar')
-                resnet = nn.DataParallel(models.resnet34())
-                resnet.load_state_dict(c['state_dict'])
-                resnet = resnet.module
-            else:
-                resnet = getattr(models, model)(pretrained=True)
+            resnet = getattr(models, model)(pretrained=True)
             resnet.cuda().eval()
             resnet_feature = nn.Sequential(resnet.conv1, resnet.bn1,
                                            resnet.relu,
@@ -240,9 +224,7 @@ class ConvNetFeatureSaver(object):
         return feature_pixl, feature_conv, feature_logit, feature_smax
 
 
-# calculate paiwise distances
 def distance(X, Y, sqrt):
-
     nX = X.size(0)
     nY = Y.size(0)
     X = X.view(nX,-1).cuda()
@@ -263,10 +245,8 @@ def distance(X, Y, sqrt):
 
 
 def wasserstein(M, sqrt):
-
     if sqrt:
         M = M.abs().sqrt()
-    t1 = timeit.default_timer()
     emd = ot.emd2([], [], M.numpy())
 
     return emd
@@ -285,7 +265,6 @@ class Score_knn:
 
 
 def knn(Mxx, Mxy, Myy, k, sqrt):
-
     n0 = Mxx.size(0)
     n1 = Myy.size(0)
     label = torch.cat((torch.ones(n0), torch.zeros(n1)))
@@ -318,7 +297,6 @@ def knn(Mxx, Mxy, Myy, k, sqrt):
 
 
 def mmd(Mxx, Mxy, Myy, sigma):
-
     scale = Mxx.mean()
     Mxx = torch.exp(-Mxx / (scale * 2 * sigma * sigma))
     Mxy = torch.exp(-Mxy / (scale * 2 * sigma * sigma))
@@ -329,7 +307,6 @@ def mmd(Mxx, Mxy, Myy, sigma):
 
 
 def entropy_score(X, Y, epsilons):
-
     Mxy = distance(X, Y, False)
     scores = []
     for epsilon in epsilons:
