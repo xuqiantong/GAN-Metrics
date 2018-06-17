@@ -16,10 +16,12 @@ Use `main.py` to creat all the experiments you want to run. There are some examp
 	- mixtures of real/fake samples
 	- samples with different size
 	- sampels with transformation
+- Simulate mode collapsing, mode dropping and overfitting
 
 ### Run tasks
 Use `worker.py` to pick and actually excute tasks. You can sprawl as many workers as you want to run in parallel, as long as a unique id is specified for each worker: 
 ```
 python3 worker.py --id 1
+python3 worker.py --id 2
 ```
 All the experiment results will be stored in `<g.default_repo_dir>/rlt/`.
