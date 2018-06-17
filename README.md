@@ -11,3 +11,4 @@ python3 demo_dcgan.py \
 --dataroot <data_folder> \
 --sampleSize 2000
 ```
+![demo](demo.gif)

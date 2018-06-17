@@ -82,18 +82,19 @@ if False:
 if True:
     for sampleSize in [100, 200, 400, 800, 1600, 3200, 6400, 12800]:
         for data in ['celeba', 'lsun']:
-            for foldername in ['DCGAN24' if data == 'celeba' else 'DCGAN9', 'true_test']:
-                dataList = []
-                dataList.append(Ent(1.0, data, foldername, trans))
+            for featureType in ['resnet34', 'vgg16', 'inception_v3']:
+                for foldername in ['DCGAN24' if data == 'celeba' else 'DCGAN9', 'true_test']:
+                    dataList = []
+                    dataList.append(Ent(1.0, data, foldername, trans))
 
-                tasks.append(
-                    TMix('Mix', sampleSize, data, 'resnet34_conv', dataList))
-                tasks.append(
-                    TMix('Incep', sampleSize, data, 'resnet34_smax', dataList))
-                tasks.append(
-                    TMix('ModeScore', sampleSize, data, 'resnet34_smax', dataList))
-                tasks.append(
-                    TMix('FID', sampleSize, data, 'resnet34_smax', dataList))
+                    tasks.append(
+                        TMix('Mix', sampleSize, data, featureType + '_conv', dataList))
+                    tasks.append(
+                        TMix('Incep', sampleSize, data, featureType + '_conv', dataList))
+                    tasks.append(
+                        TMix('ModeScore', sampleSize, data, featureType + '_conv', dataList))
+                    tasks.append(
+                        TMix('FID', sampleSize, data, featureType + '_conv', dataList))
 
 
 # For robustness
