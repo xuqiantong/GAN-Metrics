@@ -55,6 +55,13 @@ class TGan(object):
         self.model = model
 
 
+class TExp(object):
+
+    def __init__(self, mode, data):
+        self.mode = mode
+        self.data = data
+
+
 def lastFolder(foldername):
     return os.path.basename(os.path.normpath(foldername))
 

@@ -12,6 +12,7 @@ from sampler.subclass import subclass_sampler
 from utils import mkdir
 from mix import getDat, Ent
 from metric import distance, compute_score, inception_score, entropy_score, mode_score, fid
+from experiments import run_overfit_exp, run_collapse_exp, run_drop_exp
 from gan.DCGAN import DCGAN_main
 from gan.DCGAN_cluster import DCGAN_cluster_main
 from gan.MGGAN import MGGAN_main
@@ -168,6 +169,15 @@ def run_combine(t):
             f = open(fid_file_name, "wb")
             pickle.dump(FID, f)
             f.close()
+
+    elif t.mode == 'collapse':
+        run_collapse_exp(t.data)
+
+    elif t.mode == 'drop':
+        run_drop_exp(t.data)
+
+    elif t.mode == 'overfit':
+        run_overfit_exp(t.data)
 
     elif t.mode == 'Gen':  # generate necessary data..
         if t.data == 'noise':

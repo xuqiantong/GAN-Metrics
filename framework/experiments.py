@@ -27,18 +27,18 @@ g = globals.Globals()
 ## ResNet feature generator
 device_id = 0
 
-resnet = models.resnet34(pretrained=True).cuda(device_id).eval()
-resnet_feature = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu,
-                               resnet.maxpool, resnet.layer1,
-                               resnet.layer2, resnet.layer3, resnet.layer4).cuda(device_id).eval()
-trans = transforms.Compose([
-    transforms.ToPILImage(),
-    transforms.Resize(224),
-    transforms.ToTensor(),
-    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-])
-
 def get_features(imgs, batch_size=100):
+    resnet = models.resnet34(pretrained=True).cuda(device_id).eval()
+    resnet_feature = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu,
+                                   resnet.maxpool, resnet.layer1,
+                                   resnet.layer2, resnet.layer3, resnet.layer4).cuda(device_id).eval()
+    trans = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Scale(64),
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
+
     feature_conv, feature_smax, feature_class = [], [], []
     for batch in tqdm(imgs.split(batch_size)):
         batch = torch.stack(list(map(trans, batch)), 0)
@@ -134,7 +134,7 @@ def drop_exp_1(r_feat_val, r_feat_train, pred):
         collapsed[pred.eq(c)] = 1
         cidx = index[collapsed.eq(1)]
         ncidx = index[collapsed.ne(1)]
-        if ncidx.dim() == 0 or cidx.dim() == 0:
+        if ncidx.dim() == 0 or cidx.dim() == 0 or ncidx.size(0) == 0:
             continue
         for j in cidx:
             copy_idx = np.random.randint(0, ncidx.size(0))
@@ -165,7 +165,7 @@ def drop_exp_2(r_feat_val, r_feat_train, pred):
         collapsed[pred.eq(c)] = 1
         cidx = index[collapsed.eq(1)]
         ncidx = index[collapsed.ne(1)]
-        if ncidx.dim() == 0 or cidx.dim() == 0:
+        if ncidx.dim() == 0 or cidx.dim() == 0 or ncidx.size(0) == 0:
             continue
         for j in cidx:
             copy_idx = np.random.randint(0, ncidx.size(0))
@@ -195,6 +195,7 @@ def overfit_exp_1(r_feat_val, r_feat_train, step=200):
         scores[i, 2], scores[i, 3] = s.acc_t, s.acc_f
         
         # Copy samples so as to overfit
+        if i == n_mode: break
         t_feat[i*step:(i+1)*step] = r_feat_val[i*step:(i+1)*step]
     
     return scores
@@ -218,66 +219,82 @@ def overfit_exp_2(r_feat_val, r_feat_train, step=200):
         scores[i, 2] = fid(t_feat, r_feat_val)
         
         # Copy samples so as to overfit
+        if i == n_mode: break
         t_feat[i*step:(i+1)*step] = r_feat_val[i*step:(i+1)*step]
     
     return scores
 
 
 # Datasets
-celeba = dset.ImageFolder(root=g.default_data_dir,
-                               transform=transforms.Compose([
-                                   transforms.CenterCrop(138),
-                                   transforms.Resize(64),
-                                   transforms.ToTensor(),
-                               ]))
+def get_dataset(dataset_name):
+    if dataset_name == 'celeba':
+        celeba = dset.ImageFolder(root=g.default_data_dir,
+                                   transform=transforms.Compose([
+                                       transforms.CenterCrop(138),
+                                       transforms.Scale(64),
+                                       transforms.ToTensor(),
+                                   ]))
+        return celeba
 
-#lsun = dset.LSUN(root=g.default_data_dir, classes=['bedroom_train'],
-#                        transform=transforms.Compose([
-#                            transforms.Resize(64),
-#                            transforms.CenterCrop(64),
-#                            transforms.ToTensor(),
-#                            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-#                        ]))
+    if dataset_name == 'lsun':
+        lsun = dset.LSUN(db_path=g.default_data_dir+'lsun/', classes=['bedroom_train'],
+                            transform=transforms.Compose([
+                                transforms.Scale(64),
+                                transforms.CenterCrop(64),
+                                transforms.ToTensor(),
+                                #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                            ]))
+        return lsun
 
 
 # Let's run
-for dataset_name in ['celeba']:
-    if dataset_name == 'celeba':
-        dataset = celeba
-    if dataset_name == 'lsun':
-        dataset = lsun
-    
+def prepare(dataset):
+    real_idx = torch.randperm(len(dataset)).long()
+    r_imgs = torch.stack([dataset[i][0] for i in tqdm(real_idx[:2000])], 0)
+    r2_imgs = torch.stack([dataset[i][0] for i in tqdm(real_idx[2000:4000])], 0)
+    kmeans = KMeans(n_clusters=50, n_jobs=12)
+    X = r_imgs.view(2000, -1).numpy()
+    kmeans.fit(X)
+    centers = torch.from_numpy(kmeans.cluster_centers_).view(-1, 3, 64, 64).float()
+    r_feat = get_features(r_imgs)
+    r2_feat = get_features(r2_imgs)
+    c_feat = get_features(centers)
+    pred = distance(r_imgs, centers, False).min(1)[1].squeeze_()
+
+    return r_imgs, r2_imgs, centers, r_feat, r2_feat, c_feat, pred
+
+def run_overfit_exp(dataset_name):
+    dataset = get_dataset(dataset_name)
+    r_imgs, r2_imgs, centers, r_feat, r2_feat, c_feat, pred = prepare(dataset)
+
     for i in range(5):
-        print('ITER={}'.format(i))
-        real_idx = torch.randperm(len(dataset)).long()
-        r_imgs = torch.stack([dataset[i][0] for i in tqdm(real_idx[:2000])], 0)
-        r2_imgs = torch.stack([dataset[i][0] for i in tqdm(real_idx[2000:4000])], 0)
-        kmeans = KMeans(n_clusters=50, n_jobs=12)
-        X = r_imgs.view(2000, -1).numpy()
-        kmeans.fit(X)
-        centers = torch.from_numpy(kmeans.cluster_centers_).view(-1, 3, 64, 64).float()
-        r_feat = get_features(r_imgs)
-        r2_feat = get_features(r2_imgs)
-        c_feat = get_features(centers)
-        pred = distance(r_imgs, centers, False).min(1)[1].squeeze_()
-        
+        path = '{}/rlt/overfit/{}_scores_{}.pth'.format(g.default_repo_dir, dataset_name, i)
+        if not os.path.exists(path):
+            pix_scores = overfit_exp_1(r2_imgs, r_imgs)
+            conv_scores = overfit_exp_1(r2_feat[0], r_feat[0])
+            smax_scores = overfit_exp_2(r2_feat[2], r_feat[2])
+            torch.save([pix_scores, conv_scores, smax_scores], path)
+
+def run_collapse_exp(dataset_name):
+    dataset = get_dataset(dataset_name)
+    r_imgs, r2_imgs, centers, r_feat, r2_feat, c_feat, pred = prepare(dataset)
+
+    for i in range(5):
         path = '{}/rlt/collapse/{}_scores_{}.pth'.format(g.default_repo_dir, dataset_name, i)
         if not os.path.exists(path):
             pix_scores = collapse_exp_1(r2_imgs, r_imgs, centers, pred)
             conv_scores = collapse_exp_1(r2_feat[0], r_feat[0], c_feat[0], pred)
             smax_scores = collapse_exp_2(r2_feat[2], r_feat[2], c_feat[2], pred)
             torch.save([pix_scores, conv_scores, smax_scores], path)
-            
+
+def run_drop_exp(dataset_name):
+    dataset = get_dataset(dataset_name)
+    r_imgs, r2_imgs, centers, r_feat, r2_feat, c_feat, pred = prepare(dataset)
+
+    for i in range(5):
         path = '{}/rlt/drop/{}_scores_{}.pth'.format(g.default_repo_dir, dataset_name, i)
         if not os.path.exists(path):
             pix_scores = drop_exp_1(r2_imgs, r_imgs, pred)
             conv_scores = drop_exp_1(r2_feat[0], r_feat[0], pred)
             smax_scores = drop_exp_2(r2_feat[2], r_feat[2], pred)
-            torch.save([pix_scores, conv_scores, smax_scores], path)
-            
-        path = '{}/rlt/overfit/{}_scores_{}.pth'.format(g.default_repo_dir, dataset_name, i)
-        if not os.path.exists(path):
-            pix_scores = overfit_exp_1(r2_imgs, r_imgs)
-            conv_scores = overfit_exp_1(r2_feat[0], r_feat[0])
-            smax_scores = overfit_exp_2(r2_feat[2], r_feat[2])
             torch.save([pix_scores, conv_scores, smax_scores], path)

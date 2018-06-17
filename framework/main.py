@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 from globals import Globals
 from mix import Ent
 from utils import Rotate
-from utils import mkdir, TMix, TGen
+from utils import mkdir, TMix, TGen, TExp
 
 g = Globals()
 
@@ -99,7 +99,7 @@ if False:
 
 # For robustness
 # When using `trans_rotate` and `trans_rand`, only resnet34 is used for feature extraction.
-if True:
+if False:
     for sampleSize in [2000]:
         for data in ['celeba', 'lsun']:
             if data == 'celeba':
@@ -127,6 +127,15 @@ if True:
                         TMix('ModeScore', sampleSize, data, 'resnet34_smax', dataList))
                     tasks.append(
                         TMix('FID', sampleSize, data, 'resnet34_smax', dataList))
+
+
+# Mode collapse, mode drop, overfit 
+if True:
+    for data in ['celeba', 'lsun']:
+        for exp in ['collapse', 'drop', 'overfit']:
+            tasks.append(TExp(exp, data))
+
+
 
 print(len(tasks))
 np.save(g.default_repo_dir + "tasks", tasks)
