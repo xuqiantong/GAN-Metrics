@@ -99,7 +99,7 @@ if False:
 
 # For robustness
 # When using `trans_rotate` and `trans_rand`, only resnet34 is used for feature extraction.
-if False:
+if True:
     for sampleSize in [2000]:
         for data in ['celeba', 'lsun']:
             if data == 'celeba':

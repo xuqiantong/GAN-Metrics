@@ -6,9 +6,10 @@ This repository provides the code for the paper [An empirical study on evaluatio
 We create a demo for DCGAN training as well as computing all the metrics after each epoch.
 ```
 python3 demo_dcgan.py \
---dataset cifar10  \
+--dataset cifar10 \
 --cuda \
 --dataroot <data_folder> \
+--outf <output_folder> \
 --sampleSize 2000
 ```
 ![demo](demo.gif)
