@@ -79,7 +79,7 @@ if False:
 
 
 # Metrics on different number of samples
-if True:
+if False:
     for sampleSize in [100, 200, 400, 800, 1600, 3200, 6400, 12800]:
         for data in ['celeba', 'lsun']:
             for featureType in ['resnet34', 'vgg16', 'inception_v3']:

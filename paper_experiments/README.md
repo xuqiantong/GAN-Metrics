@@ -20,6 +20,6 @@ Use `main.py` to creat all the experiments you want to run. There are some examp
 ### Run tasks
 Use `worker.py` to pick and actually excute tasks. You can sprawl as many workers as you want to run in parallel, as long as a unique id is specified for each worker: 
 ```
-python3 worker.py --id 10086
+python3 worker.py --id 1
 ```
 All the experiment results will be stored in `<g.default_repo_dir>/rlt/`.
