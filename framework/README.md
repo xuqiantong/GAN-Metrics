@@ -1,6 +1,6 @@
 # GAN Metrics
 
-This repository provides the code for the paper [An empirical study on evaluation metrics of generative adversarial networks](https://openreview.net/pdf?id=Sy1f0e-R-).
+This is the testing framework of sample based GAN evaluation metrics.
 
 ## Usage
 ### Configuration
