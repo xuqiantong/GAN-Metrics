@@ -50,7 +50,7 @@ def run_combine(t):
         mkdir(g.default_repo_dir + "samples/Mix")
         print("running mix mod..")
         mkdir(g.default_repo_dir + "rlt")
-        for sp in range(0, 1 if t.mixOnly else 1):
+        for sp in range(0, 5 if t.mixOnly else 1):
             def getName():
                 ans = 'mix_' if t.mode == "Mix" else 'entropy_'
                 ans = ans + t.data + '_' + t.featureType + '_'
