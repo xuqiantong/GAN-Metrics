@@ -13,9 +13,9 @@ This is the testing framework of sample based GAN evaluation metrics.
 ## Usage
 ### Configuration
 - Please specify all the global variables (e.g. dataset name, path, transformation parameters) in `globals.py`
-- Please modify model config in `sampler/features.py` if you want to use:
+- Please modify model config in `sampler/features.py` if you want to use the following to generate features:
 	- ResNet with different weights
-	- GANs with different architectures
+	- Models with different architectures
 
 ### Creat tasks
 Use `main.py` to creat all the experiments you want to run. There are some examples in `main.py` including:
