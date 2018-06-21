@@ -2,6 +2,14 @@
 
 This is the testing framework of sample based GAN evaluation metrics.
 
+## Requirement
+- Python  3.6.2
+- torch 0.2.0_2
+- torchvision 0.1.9
+- ot 0.3.1
+- tqdm 4.19.6
+- numpy, scipy, math
+
 ## Usage
 ### Configuration
 - Please specify all the global variables (e.g. dataset name, path, transformation parameters) in `globals.py`
