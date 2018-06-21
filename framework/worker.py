@@ -99,7 +99,7 @@ def run_combine(t):
         mkdir(g.default_repo_dir + "rlt")
         for sp in range(0, 5):
             def getIncepName():
-                ans = 'incep_'
+                ans = 'incep_' + t.data + '_' + t.featureType + '_'
                 for entry in t.dataList:
                     ans = ans + entry.data + '_' + entry.folder + '_' + \
                         ('%.2f' % entry.fraction) + '_' + \
@@ -121,7 +121,7 @@ def run_combine(t):
         mkdir(g.default_repo_dir + "rlt")
         for sp in range(0, 5):
             def getMSName():
-                ans = 'mode_score_'
+                ans = 'mode_score_' + t.data + '_' + t.featureType + '_'
                 for entry in t.dataList:
                     ans = ans + entry.data + '_' + entry.folder + '_' + \
                         ('%.2f' % entry.fraction) + '_' + \
@@ -148,7 +148,7 @@ def run_combine(t):
         mkdir(g.default_repo_dir + "rlt")
         for sp in range(0, 5):
             def getFidName():
-                ans = 'fid_'
+                ans = 'fid_' + t.data + '_' + t.featureType + '_'
                 for entry in t.dataList:
                     ans = ans + entry.data + '_' + entry.folder + '_' + \
                         ('%.2f' % entry.fraction) + '_' + \
