@@ -25,34 +25,11 @@ def giveName(iter):  # 7 digit name.
     return ans.zfill(7)
 
 
-def sampleFake(netG, nz, sampleSize, batchSize, saveFolder):
-    print('sampling fake images ...')
-    saveFolder = saveFolder + '0/'
-
-    try:
-        os.makedirs(saveFolder)
-    except OSError:
-        pass
-
-    noise = torch.FloatTensor(batchSize, nz, 1, 1).cuda()
-    iter = 0
-    for i in range(0, 1 + sampleSize // batchSize):
-        noise.data.normal_(0, 1)
-        fake = netG(noise)
-        for j in range(0, len(fake.data)):
-            if iter < sampleSize:
-                vutils.save_image(fake.data[j].mul(0.5).add(
-                    0.5), saveFolder + giveName(iter) + ".png")
-            iter += 1
-            if iter >= sampleSize:
-                break
-
-
-def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder):
-    print('sampling real images ...')
-    saveFolder = saveFolder + '0/'
-
-    workers = 4
+def make_dataset(dataset, dataroot, imageSize):
+    """
+    :param dataset: must be in 'cifar10 | lsun | imagenet | folder | lfw | fake'
+    :return: pytorch dataset for DataLoader to utilize
+    """
     if dataset in ['imagenet', 'folder', 'lfw']:
         # folder dataset
         dataset = dset.ImageFolder(root=dataroot,
@@ -89,8 +66,40 @@ def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder):
                                        transforms.Normalize(
                                            (0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                    ]))
-
+    else:
+        raise Exception('--dataset must be in cifar10 | lsun | imagenet | folder | lfw | fake')
     assert dataset
+    return dataset
+
+
+def sampleFake(netG, nz, sampleSize, batchSize, saveFolder):
+    print('sampling fake images ...')
+    saveFolder = saveFolder + '0/'
+
+    try:
+        os.makedirs(saveFolder)
+    except OSError:
+        pass
+
+    noise = torch.FloatTensor(batchSize, nz, 1, 1).cuda()
+    iter = 0
+    for i in range(0, 1 + sampleSize // batchSize):
+        noise.data.normal_(0, 1)
+        fake = netG(noise)
+        for j in range(0, len(fake.data)):
+            if iter < sampleSize:
+                vutils.save_image(fake.data[j].mul(0.5).add(
+                    0.5), saveFolder + giveName(iter) + ".png")
+            iter += 1
+            if iter >= sampleSize:
+                break
+
+
+def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder, workers=4):
+    print('sampling real images ...')
+    saveFolder = saveFolder + '0/'
+
+    dataset = make_dataset(dataset, dataroot, imageSize)
     dataloader = torch.utils.data.DataLoader(
         dataset, shuffle=True, batch_size=batchSize, num_workers=int(workers))
 
@@ -100,18 +109,18 @@ def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder):
         except OSError:
             pass
 
-        iter = 0
-        for i, data in enumerate(dataloader, 0):
-            img, _ = data
-            for j in range(0, len(img)):
+    iter = 0
+    for i, data in enumerate(dataloader, 0):
+        img, _ = data
+        for j in range(0, len(img)):
 
-                vutils.save_image(img[j].mul(0.5).add(
-                    0.5), saveFolder + giveName(iter) + ".png")
-                iter += 1
-                if iter >= sampleSize:
-                    break
+            vutils.save_image(img[j].mul(0.5).add(
+                0.5), saveFolder + giveName(iter) + ".png")
+            iter += 1
             if iter >= sampleSize:
                 break
+        if iter >= sampleSize:
+            break
 
 
 class ConvNetFeatureSaver(object):
@@ -207,10 +216,10 @@ class ConvNetFeatureSaver(object):
                 feature_logit.append(flogit.data.cpu())
                 feature_smax.append(fsmax.data.cpu())
 
-        feature_pixl = torch.cat(feature_pixl, 0)
-        feature_conv = torch.cat(feature_conv, 0)
-        feature_logit = torch.cat(feature_logit, 0)
-        feature_smax = torch.cat(feature_smax, 0)
+        feature_pixl = torch.cat(feature_pixl, 0).to('cpu')
+        feature_conv = torch.cat(feature_conv, 0).to('cpu')
+        feature_logit = torch.cat(feature_logit, 0).to('cpu')
+        feature_smax = torch.cat(feature_smax, 0).to('cpu')
 
         if save2disk:
             torch.save(feature_conv, os.path.join(
@@ -228,9 +237,9 @@ class ConvNetFeatureSaver(object):
 def distance(X, Y, sqrt):
     nX = X.size(0)
     nY = Y.size(0)
-    X = X.view(nX,-1).cuda()
+    X = X.view(nX,-1)
     X2 = (X*X).sum(1).resize_(nX,1)
-    Y = Y.view(nY,-1).cuda()
+    Y = Y.view(nY,-1)
     Y2 = (Y*Y).sum(1).resize_(nY,1)
 
     M = torch.zeros(nX, nY)
@@ -316,6 +325,27 @@ def entropy_score(X, Y, epsilons):
     return scores
 
 
+def ent(M, epsilon):
+    n0 = M.size(0)
+    n1 = M.size(1)
+    neighbors = M.lt(epsilon).float()
+    sums = neighbors.sum(0).repeat(n0, 1)
+    sums[sums.eq(0)] = 1
+    neighbors = neighbors.div(sums)
+    probs = neighbors.sum(1) / n1
+    rem = 1 - probs.sum()
+    if rem < 0:
+        rem = 0
+    probs = torch.cat((probs, rem*torch.ones(1)), 0)
+    e = {}
+    e['probs'] = probs
+    probs = probs[probs.gt(0)]
+    e['ent'] = -probs.mul(probs.log()).sum()
+
+    return e
+
+
+
 eps = 1e-20
 def inception_score(X):
     kl = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
@@ -368,14 +398,14 @@ def compute_score(real, fake, k=1, sigma=1, sqrt=True):
 
 def compute_score_raw(dataset, imageSize, dataroot, sampleSize, batchSize,
                       saveFolder_r, saveFolder_f, netG, nz,
-                      conv_model='resnet34'):
+                      conv_model='resnet34', workers=4):
 
     sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize,
-               saveFolder_r)
-    sampleFake(netG, nz, sampleSize, batchSize, saveFolder_f)
+               saveFolder_r, workers=workers)
+    sampleFake(netG, nz, sampleSize, batchSize, saveFolder_f, )
 
     convnet_feature_saver = ConvNetFeatureSaver(model=conv_model,
-                                                batchSize=batchSize)
+                                                batchSize=batchSize, workers=workers)
     feature_r = convnet_feature_saver.save(saveFolder_r)
     feature_f = convnet_feature_saver.save(saveFolder_f)
 
