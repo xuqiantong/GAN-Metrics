@@ -1,5 +1,4 @@
-GAN Metrics
-------
+# GAN Metrics
 
 This repository provides the code for [An empirical study on evaluation metrics of generative adversarial networks](https://arxiv.org/abs/1806.07755).
 
@@ -18,7 +17,7 @@ Usage
 
 - We create a demo for DCGAN training as well as computing all the metrics after each epoch.     
 In the demo, final metrics scores of all epoches will be scored in `<outf>/score_tr_ep.npy`    
-- If u want to compute metrics of your own images, u have to modify the codes of function `compute_score_raw()` in `metric.py` by yourself :)
+- If you want to compute metrics of your own images, you have to modify the codes of function `compute_score_raw()` in `metric.py` by yourself :)
 
 ```
 python3 demo_dcgan.py \
