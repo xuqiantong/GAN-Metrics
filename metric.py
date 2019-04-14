@@ -4,7 +4,7 @@ import timeit
 import math
 
 import numpy as np
-import ot
+# import ot
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -12,9 +12,9 @@ import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
 import torchvision.models as models
-import pdb
 from tqdm import tqdm
 
+eps = 1e-20
 from scipy.stats import entropy
 from numpy.linalg import norm
 from scipy import linalg
@@ -81,7 +81,7 @@ def sampleFake(netG, nz, sampleSize, batchSize, saveFolder):
     except OSError:
         pass
 
-    noise = torch.FloatTensor(batchSize, nz, 1, 1).cuda()
+    noise = torch.FloatTensor(batchSize, nz, 1, 1) # .cuda()
     iter = 0
     for i in range(0, 1 + sampleSize // batchSize):
         noise.data.normal_(0, 1)
@@ -133,7 +133,7 @@ class ConvNetFeatureSaver(object):
         self.batch_size = batchSize
         self.workers = workers
         if self.model.find('vgg') >= 0:
-            self.vgg = getattr(models, model)(pretrained=True).cuda().eval()
+            self.vgg = getattr(models, model)(pretrained=True).eval() # .cuda()
             self.trans = transforms.Compose([
                 transforms.Resize(224),
                 transforms.ToTensor(),
@@ -142,12 +142,12 @@ class ConvNetFeatureSaver(object):
             ])
         elif self.model.find('resnet') >= 0:
             resnet = getattr(models, model)(pretrained=True)
-            resnet.cuda().eval()
+            resnet.eval() # .cuda()
             resnet_feature = nn.Sequential(resnet.conv1, resnet.bn1,
                                            resnet.relu,
                                            resnet.maxpool, resnet.layer1,
                                            resnet.layer2, resnet.layer3,
-                                           resnet.layer4).cuda().eval()
+                                           resnet.layer4).eval() # .cuda()
             self.resnet = resnet
             self.resnet_feature = resnet_feature
             self.trans = transforms.Compose([
@@ -158,7 +158,7 @@ class ConvNetFeatureSaver(object):
             ])
         elif self.model == 'inception' or self.model == 'inception_v3':
             inception = models.inception_v3(
-                pretrained=True, transform_input=False).cuda().eval()
+                pretrained=True, transform_input=False).eval() # .cuda()
             inception_feature = nn.Sequential(inception.Conv2d_1a_3x3,
                                               inception.Conv2d_2a_3x3,
                                               inception.Conv2d_2b_3x3,
@@ -176,7 +176,7 @@ class ConvNetFeatureSaver(object):
                                               inception.Mixed_7a,
                                               inception.Mixed_7b,
                                               inception.Mixed_7c,
-                                              ).cuda().eval()
+                                              ).eval() # .cuda()
             self.inception = inception
             self.inception_feature = inception_feature
             self.trans = transforms.Compose([
@@ -189,24 +189,22 @@ class ConvNetFeatureSaver(object):
 
     def save(self, imgFolder, save2disk=False):
         dataset = dset.ImageFolder(root=imgFolder, transform=self.trans)
-        dataloader = torch.utils.data.DataLoader(
-            dataset, batch_size=self.batch_size, num_workers=self.workers)
+        if False:
+            print(imgFolder)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, num_workers=self.workers)
         print('extracting features...')
         feature_pixl, feature_conv, feature_smax, feature_logit = [], [], [], []
         for img, _ in tqdm(dataloader):
             with torch.no_grad():
-                input = img.cuda()
+                input = img # .cuda()
                 if self.model == 'vgg' or self.model == 'vgg16':
                     fconv = self.vgg.features(input).view(input.size(0), -1)
                     flogit = self.vgg.classifier(fconv)
-                    # flogit = self.vgg.logitifier(fconv)
                 elif self.model.find('resnet') >= 0:
-                    fconv = self.resnet_feature(
-                        input).mean(3).mean(2).squeeze()
+                    fconv = self.resnet_feature(input).mean(3).mean(2).squeeze()
                     flogit = self.resnet.fc(fconv)
                 elif self.model == 'inception' or self.model == 'inception_v3':
-                    fconv = self.inception_feature(
-                        input).mean(3).mean(2).squeeze()
+                    fconv = self.inception_feature(input).mean(3).mean(2).squeeze()
                     flogit = self.inception.fc(fconv)
                 else:
                     raise NotImplementedError
@@ -222,14 +220,10 @@ class ConvNetFeatureSaver(object):
         feature_smax = torch.cat(feature_smax, 0).to('cpu')
 
         if save2disk:
-            torch.save(feature_conv, os.path.join(
-                imgFolder, 'feature_pixl.pth'))
-            torch.save(feature_conv, os.path.join(
-                imgFolder, 'feature_conv.pth'))
-            torch.save(feature_logit, os.path.join(
-                imgFolder, 'feature_logit.pth'))
-            torch.save(feature_smax, os.path.join(
-                imgFolder, 'feature_smax.pth'))
+            torch.save(feature_conv, os.path.join(imgFolder, 'feature_pixl.pth'))
+            torch.save(feature_conv, os.path.join(imgFolder, 'feature_conv.pth'))
+            torch.save(feature_logit, os.path.join(imgFolder, 'feature_logit.pth'))
+            torch.save(feature_smax, os.path.join(imgFolder, 'feature_smax.pth'))
 
         return feature_pixl, feature_conv, feature_logit, feature_smax
 
@@ -237,10 +231,10 @@ class ConvNetFeatureSaver(object):
 def distance(X, Y, sqrt):
     nX = X.size(0)
     nY = Y.size(0)
-    X = X.view(nX,-1)
-    X2 = (X*X).sum(1).resize_(nX,1)
-    Y = Y.view(nY,-1)
-    Y2 = (Y*Y).sum(1).resize_(nY,1)
+    X = X.view(nX, -1)
+    X2 = (X*X).sum(1).resize_(nX, 1)
+    Y = Y.view(nY, -1)
+    Y2 = (Y*Y).sum(1).resize_(nY, 1)
 
     M = torch.zeros(nX, nY)
     M.copy_(X2.expand(nX, nY) + Y2.expand(nY, nX).transpose(0, 1) -
@@ -250,16 +244,15 @@ def distance(X, Y, sqrt):
 
     if sqrt:
         M = ((M + M.abs()) / 2).sqrt()
-
     return M
 
-
-def wasserstein(M, sqrt):
-    if sqrt:
-        M = M.abs().sqrt()
-    emd = ot.emd2([], [], M.numpy())
-
-    return emd
+#
+# def wasserstein(M, sqrt):
+#     if sqrt:
+#         M = M.abs().sqrt()
+#     emd = ot.emd2([], [], M.numpy())
+#
+#     return emd
 
 
 class Score_knn:
@@ -283,8 +276,7 @@ def knn(Mxx, Mxy, Myy, k, sqrt):
     if sqrt:
         M = M.abs().sqrt()
     INFINITY = float('inf')
-    val, idx = (M + torch.diag(INFINITY * torch.ones(n0 + n1))
-                ).topk(k, 0, False)
+    val, idx = (M + torch.diag(INFINITY * torch.ones(n0 + n1))).topk(k, 0, False)
 
     count = torch.zeros(n0 + n1)
     for i in range(0, k):
@@ -345,8 +337,6 @@ def ent(M, epsilon):
     return e
 
 
-
-eps = 1e-20
 def inception_score(X):
     kl = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
     score = np.exp(kl.sum(1).mean())
@@ -389,23 +379,41 @@ def compute_score(real, fake, k=1, sigma=1, sqrt=True):
     Myy = distance(fake, fake, False)
 
     s = Score()
-    s.emd = wasserstein(Mxy, sqrt)
+    s.emd = 0 # wasserstein(Mxy, sqrt)
     s.mmd = mmd(Mxx, Mxy, Myy, sigma)
     s.knn = knn(Mxx, Mxy, Myy, k, sqrt)
 
     return s
 
 
-def compute_score_raw(dataset, imageSize, dataroot, sampleSize, batchSize,
-                      saveFolder_r, saveFolder_f, netG, nz,
-                      conv_model='resnet34', workers=4):
+def compute_score_raw(dataset,
+                      imageSize,
+                      dataroot,
+                      sampleSize,
+                      batchSize,
+                      saveFolder_r,
+                      saveFolder_f,
+                      netG,
+                      nz,
+                      conv_model='resnet34',
+                      workers=4):
 
-    sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize,
-               saveFolder_r, workers=workers)
-    sampleFake(netG, nz, sampleSize, batchSize, saveFolder_f, )
+    sampleTrue(dataset,
+               imageSize,
+               dataroot,
+               sampleSize,
+               batchSize,
+               saveFolder_r,
+               workers=workers)
+    sampleFake(netG,
+               nz,
+               sampleSize,
+               batchSize,
+               saveFolder_f)
 
     convnet_feature_saver = ConvNetFeatureSaver(model=conv_model,
-                                                batchSize=batchSize, workers=workers)
+                                                batchSize=batchSize,
+                                                workers=workers)
     feature_r = convnet_feature_saver.save(saveFolder_r)
     feature_f = convnet_feature_saver.save(saveFolder_f)
 
@@ -417,9 +425,10 @@ def compute_score_raw(dataset, imageSize, dataroot, sampleSize, batchSize,
         Mxy = distance(feature_r[i], feature_f[i], False)
         Myy = distance(feature_f[i], feature_f[i], False)
 
-        score[i * 7] = wasserstein(Mxy, True)
-        score[i * 7 + 1] = mmd(Mxx, Mxy, Myy, 1)
         tmp = knn(Mxx, Mxy, Myy, 1, False)
+        score[i * 7] = 0 # wasserstein(Mxy, True)
+        score[i * 7 + 1] = mmd(Mxx, Mxy, Myy, 1)
+
         score[(i * 7 + 2):(i * 7 + 7)] = \
             tmp.acc, tmp.acc_t, tmp.acc_f, tmp.precision, tmp.recall
 
