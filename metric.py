@@ -125,10 +125,10 @@ def sampleTrue(dataset, imageSize, dataroot, sampleSize, batchSize, saveFolder, 
 
 class ConvNetFeatureSaver(object):
     def __init__(self, model='resnet34', workers=4, batchSize=64):
-        '''
+        """
         model: inception_v3, vgg13, vgg16, vgg19, resnet18, resnet34,
                resnet50, resnet101, or resnet152
-        '''
+        """
         self.model = model
         self.batch_size = batchSize
         self.workers = workers
@@ -189,9 +189,9 @@ class ConvNetFeatureSaver(object):
 
     def save(self, imgFolder, save2disk=False):
         dataset = dset.ImageFolder(root=imgFolder, transform=self.trans)
-        if False:
-            print(imgFolder)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, num_workers=self.workers)
+        dataloader = torch.utils.data.DataLoader(dataset,
+                                                 batch_size=self.batch_size,
+                                                 num_workers=self.workers)
         print('extracting features...')
         feature_pixl, feature_conv, feature_smax, feature_logit = [], [], [], []
         for img, _ in tqdm(dataloader):
@@ -224,7 +224,6 @@ class ConvNetFeatureSaver(object):
             torch.save(feature_conv, os.path.join(imgFolder, 'feature_conv.pth'))
             torch.save(feature_logit, os.path.join(imgFolder, 'feature_logit.pth'))
             torch.save(feature_smax, os.path.join(imgFolder, 'feature_smax.pth'))
-
         return feature_pixl, feature_conv, feature_logit, feature_smax
 
 
@@ -340,14 +339,13 @@ def ent(M, epsilon):
 def inception_score(X):
     kl = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
     score = np.exp(kl.sum(1).mean())
-
     return score
+
 
 def mode_score(X, Y):
     kl1 = X * ((X+eps).log()-(X.mean(0)+eps).log().expand_as(X))
     kl2 = X.mean(0) * ((X.mean(0)+eps).log()-(Y.mean(0)+eps).log())
     score = np.exp(kl1.sum(1).mean() - kl2.sum())
-
     return score
 
 
@@ -373,7 +371,6 @@ class Score:
 
 
 def compute_score(real, fake, k=1, sigma=1, sqrt=True):
-
     Mxx = distance(real, real, False)
     Mxy = distance(real, fake, False)
     Myy = distance(fake, fake, False)
@@ -382,7 +379,6 @@ def compute_score(real, fake, k=1, sigma=1, sqrt=True):
     s.emd = 0 # wasserstein(Mxy, sqrt)
     s.mmd = mmd(Mxx, Mxy, Myy, sigma)
     s.knn = knn(Mxx, Mxy, Myy, k, sqrt)
-
     return s
 
 
@@ -397,7 +393,6 @@ def compute_score_raw(dataset,
                       nz,
                       conv_model='resnet34',
                       workers=4):
-
     sampleTrue(dataset,
                imageSize,
                dataroot,
@@ -417,22 +412,43 @@ def compute_score_raw(dataset,
     feature_r = convnet_feature_saver.save(saveFolder_r)
     feature_f = convnet_feature_saver.save(saveFolder_f)
 
+    spaces = ('pixl', 'conv', 'logit', 'smax')
     # 4 feature spaces and 7 scores + incep + modescore + fid
     score = np.zeros(4 * 7 + 3)
+    # columns = [None] * len(score)
+    columns = np.full((len(score), ), '', dtype=object)
+
     for i in range(0, 4):
-        print('compute score in space: ' + str(i))
+        space = spaces[i]
+        print('compute score in space: ' + space)
         Mxx = distance(feature_r[i], feature_r[i], False)
         Mxy = distance(feature_r[i], feature_f[i], False)
         Myy = distance(feature_f[i], feature_f[i], False)
 
         tmp = knn(Mxx, Mxy, Myy, 1, False)
-        score[i * 7] = 0 # wasserstein(Mxy, True)
+        score[i * 7 + 0] = 0  # wasserstein(Mxy, True)
         score[i * 7 + 1] = mmd(Mxx, Mxy, Myy, 1)
 
-        score[(i * 7 + 2):(i * 7 + 7)] = \
-            tmp.acc, tmp.acc_t, tmp.acc_f, tmp.precision, tmp.recall
+        to_assign = tmp.acc, tmp.acc_t, tmp.acc_f, tmp.precision, tmp.recall
+        to_assign_columns = tuple(['{}_{}'.format(space, x) for x in ['acc', 'acc_t', 'acc_f', 'precision', 'recall']])
+        score[(i * 7 + 2):(i * 7 + 7)] = to_assign
+
+        columns[i * 7 + 0] = '{}_{}'.format(space, 'wasserstein')
+        columns[i * 7 + 1] = '{}_{}'.format(space, 'mmd')
+        # columns[(i * 7 + 2):(i * 7 + 7)] = to_assign_columns
+        columns[i * 7 + 2] = '{}_{}'.format(space, 'acc')
+        columns[i * 7 + 3] = '{}_{}'.format(space, 'acc_t')
+        columns[i * 7 + 4] = '{}_{}'.format(space, 'acc_f')
+        columns[i * 7 + 5] = '{}_{}'.format(space, 'precision')
+        columns[i * 7 + 6] = '{}_{}'.format(space, 'recall')
+        # , 'acc_t', 'acc_f', 'precision', 'recall']
 
     score[28] = inception_score(feature_f[3])
     score[29] = mode_score(feature_r[3], feature_f[3])
     score[30] = fid(feature_r[3], feature_f[3])
+
+    columns[28] = 'inception_score'
+    columns[29] = 'mode_score'
+    columns[30] = 'fid'
+
     return score
