@@ -271,7 +271,7 @@ class Score_knn:
     tp = 0
     fp = 0
     fn = 0
-    ft = 0
+    tn = 0
 
 
 def knn(Mxx, Mxy, Myy, k, sqrt):
@@ -298,8 +298,8 @@ def knn(Mxx, Mxy, Myy, k, sqrt):
     s.tn = ((1 - pred) * (1 - label)).sum()
     s.precision = s.tp / (s.tp + s.fp + 1e-10)
     s.recall = s.tp / (s.tp + s.fn + 1e-10)
-    s.acc_t = s.tp / (s.tp + s.fn)
-    s.acc_f = s.tn / (s.tn + s.fp)
+    s.acc_real = s.tp / (s.tp + s.fn)
+    s.acc_fake = s.tn / (s.tn + s.fp)
     s.acc = torch.eq(label, pred).float().mean()
     s.k = k
 
