@@ -4,7 +4,7 @@ import timeit
 import math
 
 import numpy as np
-# import ot
+import ot
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -220,7 +220,7 @@ class ConvNetFeatureSaver(object):
         feature_smax = torch.cat(feature_smax, 0).to('cpu')
 
         if save2disk:
-            torch.save(feature_conv, os.path.join(imgFolder, 'feature_pixl.pth'))
+            torch.save(feature_pixl, os.path.join(imgFolder, 'feature_pixl.pth'))
             torch.save(feature_conv, os.path.join(imgFolder, 'feature_conv.pth'))
             torch.save(feature_logit, os.path.join(imgFolder, 'feature_logit.pth'))
             torch.save(feature_smax, os.path.join(imgFolder, 'feature_smax.pth'))
@@ -245,13 +245,13 @@ def distance(X, Y, sqrt):
         M = ((M + M.abs()) / 2).sqrt()
     return M
 
-#
-# def wasserstein(M, sqrt):
-#     if sqrt:
-#         M = M.abs().sqrt()
-#     emd = ot.emd2([], [], M.numpy())
-#
-#     return emd
+
+def wasserstein(M, sqrt):
+    if sqrt:
+        M = M.abs().sqrt()
+    emd = ot.emd2([], [], M.numpy())
+
+    return emd
 
 
 class Score_knn:
@@ -376,7 +376,7 @@ def compute_score(real, fake, k=1, sigma=1, sqrt=True):
     Myy = distance(fake, fake, False)
 
     s = Score()
-    s.emd = 0 # wasserstein(Mxy, sqrt)
+    s.emd = wasserstein(Mxy, sqrt)
     s.mmd = mmd(Mxx, Mxy, Myy, sigma)
     s.knn = knn(Mxx, Mxy, Myy, k, sqrt)
     return s
@@ -426,7 +426,7 @@ def compute_score_raw(dataset,
         Myy = distance(feature_f[i], feature_f[i], False)
 
         tmp = knn(Mxx, Mxy, Myy, 1, False)
-        score[i * 7 + 0] = 0  # wasserstein(Mxy, True)
+        score[i * 7 + 0] = wasserstein(Mxy, True)
         score[i * 7 + 1] = mmd(Mxx, Mxy, Myy, 1)
 
         to_assign = tmp.acc, tmp.acc_t, tmp.acc_f, tmp.precision, tmp.recall
@@ -443,9 +443,13 @@ def compute_score_raw(dataset,
         columns[i * 7 + 6] = '{}_{}'.format(space, 'recall')
         # , 'acc_t', 'acc_f', 'precision', 'recall']
 
-    score[28] = inception_score(feature_f[3])
-    score[29] = mode_score(feature_r[3], feature_f[3])
-    score[30] = fid(feature_r[3], feature_f[3])
+    pixl_ind = 0
+    conv_ind = 1
+    logt_ind = 2
+    smax_ind = 3
+    score[28] = inception_score(feature_f[smax_ind])
+    score[29] = mode_score(feature_r[smax_ind], feature_f[smax_ind])
+    score[30] = fid(feature_r[conv_ind], feature_f[conv_ind])
 
     columns[28] = 'inception_score'
     columns[29] = 'mode_score'
