@@ -184,14 +184,17 @@ if __name__ == '__main__':
     score_tr = np.zeros((opt.niter, 4*7+3))
 
     # compute initial score
-    s = metric.compute_score_raw(opt.dataset, opt.imageSize, opt.dataroot, opt.sampleSize, 16, opt.outf+'/real/', opt.outf+'/fake/',
+    s = metric.compute_score_raw(opt.dataset,
+                                 opt.imageSize,
+                                 opt.dataroot,
+                                 opt.sampleSize,
+                                 16, opt.outf+'/real/', opt.outf+'/fake/',
                                  netG, opt.nz, conv_model='inception_v3', workers=int(opt.workers))
     score_tr[0] = s
     np.save('%s/score_tr.npy' % (opt.outf), score_tr)
 
-    #########################
-    #### Models training ####
-    #########################
+    # Models training
+
     for epoch in range(opt.niter):
         for i, data in enumerate(dataloader, 0):
             ############################
