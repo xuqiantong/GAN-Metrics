@@ -421,7 +421,7 @@ def compute_score_raw(dataset, imageSize, dataroot, sampleSize, batchSize,
         score[i * 7 + 1] = mmd(Mxx, Mxy, Myy, 1)
         tmp = knn(Mxx, Mxy, Myy, 1, False)
         score[(i * 7 + 2):(i * 7 + 7)] = \
-            tmp.acc, tmp.acc_t, tmp.acc_f, tmp.precision, tmp.recall
+            tmp.acc, tmp.acc_real, tmp.acc_fake, tmp.precision, tmp.recall
 
     score[28] = inception_score(feature_f[3])
     score[29] = mode_score(feature_r[3], feature_f[3])
